@@ -2,6 +2,7 @@ package es.com.controller;
 
 import es.com.dto.JoinRequest;
 import es.com.dto.JoinResponse;
+import es.com.dto.Reset;
 import es.com.util.ActiveUserChangeListener;
 import es.com.util.ActiveUserManager;
 import lombok.extern.log4j.Log4j2;
@@ -70,6 +71,8 @@ public class WebSocketChatController implements ActiveUserChangeListener {
         if(joinResponse != null) {
             if(sha.getUser().getName().equals(joinResponse.getInvitedUser())) {
                 webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/joinresponse", joinResponse);
+                webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/reset", new Reset(false));
+                webSocket.convertAndSendToUser(joinResponse.getInvitedUser(), "/queue/reset", new Reset(true));
             }
             log.info("Join response: " + joinResponse);
         } else {

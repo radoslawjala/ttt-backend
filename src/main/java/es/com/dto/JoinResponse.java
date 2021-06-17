@@ -11,12 +11,12 @@ public class JoinResponse {
 
     private String invitingUser;
     private String invitedUser;
-    private boolean decision;
+    private String decision;
 
     public JoinResponse() {
     }
 
-    public JoinResponse(String invitingUser, String invitedUser, boolean decision) {
+    public JoinResponse(String invitingUser, String invitedUser, String decision) {
         this.invitingUser = invitingUser;
         this.invitedUser = invitedUser;
         this.decision = decision;
