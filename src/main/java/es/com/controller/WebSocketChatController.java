@@ -1,8 +1,6 @@
 package es.com.controller;
 
-import es.com.dto.JoinRequest;
-import es.com.dto.JoinResponse;
-import es.com.dto.Reset;
+import es.com.dto.*;
 import es.com.util.ActiveUserChangeListener;
 import es.com.util.ActiveUserManager;
 import lombok.extern.log4j.Log4j2;
@@ -38,27 +36,11 @@ public class WebSocketChatController implements ActiveUserChangeListener {
         activeUserManager.removeListener(this);
     }
 
-//    @MessageMapping("/chat")
-//    public void send(SimpMessageHeaderAccessor sha, @Payload ChatMessage message) {
-//        if(message.getRecipient() != null) {
-//            message.setTime(StringUtils.getCurrentFormattedTime(Long.parseLong(message.getTime())));
-//            String sender = sha.getUser().getName();
-//            log.info("Sender name from SimpMessageHeader: " + sender);
-//            if (senderIsNotRecipient(message.getRecipient(), sender)) {
-//                webSocket.convertAndSendToUser(sender, "/queue/messages", message);
-//            }
-//            webSocket.convertAndSendToUser(message.getRecipient(), "/queue/messages", message);
-//            log.info("Received message: " + message);
-//        } else {
-//            log.error("Recipient name is null");
-//        }
-//    }
-
-    @MessageMapping("/joinrequest")
+    @MessageMapping("/joinRequest")
     public void joinRequest(SimpMessageHeaderAccessor sha, @Payload JoinRequest joinRequest) {
         if(joinRequest != null) {
             if(sha.getUser().getName().equals(joinRequest.getInvitingUser())) {
-                webSocket.convertAndSendToUser(joinRequest.getInvitedUser(), "/queue/joinrequest", joinRequest);
+                webSocket.convertAndSendToUser(joinRequest.getInvitedUser(), "/queue/joinRequest", joinRequest);
             }
             log.info("Join request: " + joinRequest);
         } else {
@@ -66,18 +48,27 @@ public class WebSocketChatController implements ActiveUserChangeListener {
         }
     }
 
-    @MessageMapping("/joinresponse")
+    @MessageMapping("/joinResponse")
     public void joinResponse(SimpMessageHeaderAccessor sha, @Payload JoinResponse joinResponse) {
         if(joinResponse != null) {
             if(sha.getUser().getName().equals(joinResponse.getInvitedUser())) {
-                webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/joinresponse", joinResponse);
-                webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/reset", new Reset(false));
-                webSocket.convertAndSendToUser(joinResponse.getInvitedUser(), "/queue/reset", new Reset(true));
+                if(joinResponse.getDecision().equals("yes")) {
+                    webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/reset", new Reset(true, joinResponse.getInvitedUser()));
+                    webSocket.convertAndSendToUser(joinResponse.getInvitedUser(), "/queue/reset", new Reset(false, joinResponse.getInvitingUser()));
+                }
+                webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/joinResponse", joinResponse);
             }
             log.info("Join response: " + joinResponse);
         } else {
             log.error("Receipient name is null");
         }
+    }
+
+    @MessageMapping("/sendMove")
+    public void receiveMoveFromPlayer(SimpMessageHeaderAccessor sha, @Payload MoveFromPlayer moveFromPlayer) {
+        PreparedMove move = new PreparedMove(moveFromPlayer.getFieldNumber(), "X");
+        webSocket.convertAndSendToUser(sha.getUser().getName(), "/queue/moveReceived", move);
+//        webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/reset", new Reset(true));
     }
 
     private boolean senderIsNotRecipient(String recipient, String sender) {
