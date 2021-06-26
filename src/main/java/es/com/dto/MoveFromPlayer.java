@@ -10,11 +10,13 @@ import lombok.ToString;
 public class MoveFromPlayer {
 
     private int fieldNumber;
+    private String opponentName;
 
     public MoveFromPlayer() {
     }
 
-    public MoveFromPlayer(int fieldNumber) {
+    public MoveFromPlayer(int fieldNumber, String opponentName) {
         this.fieldNumber = fieldNumber;
+        this.opponentName = opponentName;
     }
 }

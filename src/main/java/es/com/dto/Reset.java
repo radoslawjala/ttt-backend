@@ -9,14 +9,14 @@ import lombok.ToString;
 @ToString
 public class Reset {
 
-    private boolean enabled;
+    private boolean disabled;
     private String opponentName;
 
     public Reset() {
     }
 
-    public Reset(boolean enabled, String opponentName) {
-        this.enabled = enabled;
+    public Reset(boolean disabled, String opponentName) {
+        this.disabled = disabled;
         this.opponentName = opponentName;
     }
 }

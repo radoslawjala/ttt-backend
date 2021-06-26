@@ -11,12 +11,14 @@ public class PreparedMove {
 
     private int fieldNumber;
     private  String text;
+    private boolean boardDisabled;
 
     public PreparedMove() {
     }
 
-    public PreparedMove(int fieldNumber, String text) {
+    public PreparedMove(int fieldNumber, String text, boolean boardDisabled) {
         this.fieldNumber = fieldNumber;
         this.text = text;
+        this.boardDisabled = boardDisabled;
     }
 }

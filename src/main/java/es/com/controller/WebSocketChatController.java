@@ -1,6 +1,7 @@
 package es.com.controller;
 
 import es.com.dto.*;
+import es.com.service.Match;
 import es.com.util.ActiveUserChangeListener;
 import es.com.util.ActiveUserManager;
 import lombok.extern.log4j.Log4j2;
@@ -36,6 +37,8 @@ public class WebSocketChatController implements ActiveUserChangeListener {
         activeUserManager.removeListener(this);
     }
 
+    private Match match;
+
     @MessageMapping("/joinRequest")
     public void joinRequest(SimpMessageHeaderAccessor sha, @Payload JoinRequest joinRequest) {
         if(joinRequest != null) {
@@ -53,8 +56,11 @@ public class WebSocketChatController implements ActiveUserChangeListener {
         if(joinResponse != null) {
             if(sha.getUser().getName().equals(joinResponse.getInvitedUser())) {
                 if(joinResponse.getDecision().equals("yes")) {
-                    webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/reset", new Reset(true, joinResponse.getInvitedUser()));
-                    webSocket.convertAndSendToUser(joinResponse.getInvitedUser(), "/queue/reset", new Reset(false, joinResponse.getInvitingUser()));
+                    createMatch(joinResponse.getInvitingUser(), joinResponse.getInvitedUser());
+                    webSocket.convertAndSendToUser(joinResponse.getInvitingUser(),
+                            "/queue/reset", new Reset(false, joinResponse.getInvitedUser()));
+                    webSocket.convertAndSendToUser(joinResponse.getInvitedUser(),
+                            "/queue/reset", new Reset(true, joinResponse.getInvitingUser()));
                 }
                 webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/joinResponse", joinResponse);
             }
@@ -64,11 +70,26 @@ public class WebSocketChatController implements ActiveUserChangeListener {
         }
     }
 
+    private void createMatch(String invitingUser, String invitedUser) {
+        match = new Match(invitingUser, invitedUser);
+    }
+
     @MessageMapping("/sendMove")
     public void receiveMoveFromPlayer(SimpMessageHeaderAccessor sha, @Payload MoveFromPlayer moveFromPlayer) {
-        PreparedMove move = new PreparedMove(moveFromPlayer.getFieldNumber(), "X");
-        webSocket.convertAndSendToUser(sha.getUser().getName(), "/queue/moveReceived", move);
+//        PreparedMove move = new PreparedMove(moveFromPlayer.getFieldNumber(), "X");
+//        webSocket.convertAndSendToUser(sha.getUser().getName(), "/queue/moveReceived", move);
 //        webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/reset", new Reset(true));
+
+        match.setGameField(moveFromPlayer);
+        sendMoveToUsers(sha.getUser().getName(), moveFromPlayer);
+    }
+
+    private void sendMoveToUsers(String senderName, MoveFromPlayer move) {
+        String currentSign = match.getSenderSign(senderName);
+        PreparedMove moveToSender = new PreparedMove(move.getFieldNumber(), currentSign, true);
+        PreparedMove moveToOpponent = new PreparedMove(move.getFieldNumber(), currentSign, false);
+        webSocket.convertAndSendToUser(senderName, "/queue/moveReceived", moveToSender);
+        webSocket.convertAndSendToUser(move.getOpponentName(), "/queue/moveReceived", moveToOpponent);
     }
 
     private boolean senderIsNotRecipient(String recipient, String sender) {
