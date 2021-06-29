@@ -1,6 +1,7 @@
 package es.com.controller;
 
 import es.com.dto.*;
+import es.com.model.GameResult;
 import es.com.service.Match;
 import es.com.util.ActiveUserChangeListener;
 import es.com.util.ActiveUserManager;
@@ -76,12 +77,13 @@ public class WebSocketChatController implements ActiveUserChangeListener {
 
     @MessageMapping("/sendMove")
     public void receiveMoveFromPlayer(SimpMessageHeaderAccessor sha, @Payload MoveFromPlayer moveFromPlayer) {
-//        PreparedMove move = new PreparedMove(moveFromPlayer.getFieldNumber(), "X");
-//        webSocket.convertAndSendToUser(sha.getUser().getName(), "/queue/moveReceived", move);
-//        webSocket.convertAndSendToUser(joinResponse.getInvitingUser(), "/queue/reset", new Reset(true));
-
         match.setGameField(moveFromPlayer);
         sendMoveToUsers(sha.getUser().getName(), moveFromPlayer);
+        if(match.checkIfPlayerWon(sha.getUser().getName())) {
+            log.info("User " + sha.getUser().getName() + " won!");
+            webSocket.convertAndSendToUser(sha.getUser().getName(), "/queue/gameResult", new GameResult(sha.getUser().getName()));
+            webSocket.convertAndSendToUser(moveFromPlayer.getOpponentName(), "/queue/gameResult", new GameResult(sha.getUser().getName()));
+        }
     }
 
     private void sendMoveToUsers(String senderName, MoveFromPlayer move) {
@@ -91,11 +93,7 @@ public class WebSocketChatController implements ActiveUserChangeListener {
         webSocket.convertAndSendToUser(senderName, "/queue/moveReceived", moveToSender);
         webSocket.convertAndSendToUser(move.getOpponentName(), "/queue/moveReceived", moveToOpponent);
     }
-
-    private boolean senderIsNotRecipient(String recipient, String sender) {
-        return !sender.equals(recipient);
-    }
-
+    
     @Override
     public void notifyActiveUserChange() {
         Set<String> activeUsers = activeUserManager.getAll();
