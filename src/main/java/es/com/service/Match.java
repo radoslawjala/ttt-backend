@@ -4,8 +4,6 @@ import es.com.dto.MoveFromPlayer;
 import es.com.model.GameField;
 import lombok.ToString;
 
-import java.util.Arrays;
-
 @ToString
 public class Match {
 
